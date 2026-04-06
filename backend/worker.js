@@ -1,6 +1,6 @@
 /**
  * Invoice System API - Cloudflare Worker
- * REST API for GST-compliant invoicing application
+ * REST API for GST-compliant invoicing apppplication
  */
 
 // CORS Headers helper
