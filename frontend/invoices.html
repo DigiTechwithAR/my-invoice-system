@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoices - Invoice System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">📄</div>
+                <span class="brand-name">Invoice System</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="invoices.html" class="nav-link active">
+                        <span class="nav-icon">📋</span>
+                        <span>Invoices</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="create-invoice.html" class="nav-link">
+                        <span class="nav-icon">➕</span>
+                        <span>Create Invoice</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="clients.html" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span>Clients</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="payments.html" class="nav-link">
+                        <span class="nav-icon">💳</span>
+                        <span>Payments</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; color: var(--danger);">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Invoices</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <a href="create-invoice.html" class="btn btn-primary">➕ New Invoice</a>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="flex" style="gap: var(--space-md); flex-wrap: wrap;">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            class="form-input"
+                            placeholder="🔍 Search invoices..."
+                            style="flex: 1; min-width: 200px;"
+                            oninput="filterInvoices()"
+                        >
+                        <select id="statusFilter" class="form-select" style="width: auto;" onchange="filterInvoices()">
+                            <option value="all">All Status</option>
+                            <option value="paid">Paid</option>
+                            <option value="unpaid">Unpaid</option>
+                            <option value="partial">Partial</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoices Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Client</th>
+                                    <th>Date</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Paid</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoicesBody">
+                                <tr>
+                                    <td colspan="8" class="text-center">
+                                        <div class="loading">
+                                            <span class="spinner"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Invoice Detail Modal -->
+    <div class="modal-overlay" id="invoiceModal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Invoice Details</h3>
+                <button class="modal-close" onclick="closeInvoiceModal()">×</button>
+            </div>
+            <div class="modal-body" id="invoiceModalBody">
+                <!-- Invoice content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Close</button>
+                <button type="button" class="btn btn-success" onclick="downloadPDF()">📄 Download PDF</button>
+                <button type="button" class="btn btn-success" onclick="shareWhatsApp()">📱 WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/pdf.js"></script>
+    <script>
+        let allInvoices = [];
+        let currentInvoice = null;
+        let selectedInvoiceId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadTheme();
+            loadInvoices();
+
+            // Check for URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewId = urlParams.get('view');
+            const downloadId = urlParams.get('download');
+
+            if (viewId) {
+                viewInvoiceDetails(viewId);
+            } else if (downloadId) {
+                setTimeout(() => {
+                    viewInvoiceDetails(downloadId).then(() => {
+                        downloadPDF();
+                    });
+                }, 500);
+            }
+        });
+
+        async function loadInvoices() {
+            try {
+                const response = await api.getInvoices();
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                    return;
+                }
+
+                allInvoices = response.invoices || [];
+                renderInvoices(allInvoices);
+
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to load invoices', 'error');
+            }
+        }
+
+        function renderInvoices(invoices) {
+            const tbody = document.getElementById('invoicesBody');
+
+            if (invoices.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-icon">📋</div>
+                                <p class="empty-title">No invoices found</p>
+                                <p class="empty-text">Create your first invoice to get started</p>
+                                <a href="create-invoice.html" class="btn btn-primary btn-sm">Create Invoice</a>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = invoices.map(inv => `
+                <tr>
+                    <td><strong>${escapeHtml(inv.invoice_number)}</strong></td>
+                    <td>${escapeHtml(inv.client_name)}</td>
+                    <td>${formatDate(inv.invoice_date)}</td>
+                    <td>${inv.due_date ? formatDate(inv.due_date) : '-'}</td>
+                    <td><strong>${formatCurrency(inv.total_amount)}</strong></td>
+                    <td>${formatCurrency(inv.amount_paid)}</td>
+                    <td>${getStatusBadge(inv.status)}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="action-btn view" onclick="viewInvoiceDetails(${inv.id})" title="View">👁️</button>
+                            <button class="action-btn edit" onclick="downloadInvoicePDF(${inv.id})" title="Download">⬇️</button>
+                            <button class="action-btn" style="background: rgba(37, 99, 235, 0.1); color: #2563eb;" onclick="shareInvoiceWhatsApp(${inv.id})" title="WhatsApp">📱</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterInvoices() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = allInvoices;
+
+            // Filter by search
+            if (searchTerm) {
+                filtered = filtered.filter(inv =>
+                    inv.invoice_number.toLowerCase().includes(searchTerm) ||
+                    inv.client_name.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Filter by status
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(inv => inv.status === statusFilter);
+            }
+
+            renderInvoices(filtered);
+        }
+
+        async function viewInvoiceDetails(invoiceId) {
+            selectedInvoiceId = invoiceId;
+
+            try {
+                const response = await api.getInvoice(invoiceId);
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                    return;
+                }
+
+                currentInvoice = response.invoice;
+                showInvoiceModal(currentInvoice);
+
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to load invoice details', 'error');
+            }
+        }
+
+        function showInvoiceModal(invoice) {
+            const isInterState = invoice.igst > 0;
+            const clientState = invoice.client_state_name || 'Unknown';
+
+            const html = `
+                <div style="background: var(--bg-tertiary); padding: var(--space-lg); border-radius: var(--radius-lg); margin-bottom: var(--space-lg);">
+                    <div class="flex-between mb-3">
+                        <div>
+                            <h3 style="margin-bottom: var(--space-sm);">${escapeHtml(invoice.invoice_number)}</h3>
+                            <p class="text-muted">Created: ${formatDate(invoice.invoice_date)} | Due: ${invoice.due_date ? formatDate(invoice.due_date) : 'N/A'}</p>
+                        </div>
+                        <div>${getStatusBadge(invoice.status)}</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div>
+                            <h4 style="margin-bottom: var(--space-sm);">Bill To:</h4>
+                            <p><strong>${escapeHtml(invoice.client_name)}</strong></p>
+                            <p style="color: var(--text-muted);">${escapeHtml(invoice.client_address || '')}</p>
+                            <p>GST: ${escapeHtml(invoice.client_gst || '-')}</p>
+                            <p>State: ${escapeHtml(clientState)}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h4 style="margin-bottom: var(--space-sm);">Invoice Summary:</h4>
+                            <p>Subtotal: <strong>₹${invoice.subtotal.toFixed(2)}</strong></p>
+                            ${isInterState
+                                ? `<p>IGST: <strong>₹${invoice.igst.toFixed(2)}</strong></p>`
+                                : `<p>CGST: <strong>₹${invoice.cgst.toFixed(2)}</strong></p>
+                                   <p>SGST: <strong>₹${invoice.sgst.toFixed(2)}</strong></p>`
+                            }
+                            <p style="font-size: 1.25rem; color: var(--primary);">Total: <strong>₹${invoice.total_amount.toFixed(2)}</strong></p>
+                            <p>Paid: <strong style="color: var(--success);">₹${invoice.amount_paid.toFixed(2)}</strong></p>
+                            <p>Due: <strong style="color: var(--danger);">₹${(invoice.total_amount - invoice.amount_paid).toFixed(2)}</strong></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container mb-3">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Rate</th>
+                                <th>GST%</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(invoice.items || []).map(item => `
+                                <tr>
+                                    <td>${escapeHtml(item.description)}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>₹${item.rate.toFixed(2)}</td>
+                                    <td>${item.gst_percentage}%</td>
+                                    <td>₹${(item.quantity * item.rate).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                ${invoice.notes || invoice.terms ? `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                        ${invoice.notes ? `
+                            <div>
+                                <h4 style="margin-bottom: var(--space-sm);">Notes:</h4>
+                                <p style="color: var(--text-secondary);">${escapeHtml(invoice.notes)}</p>
+                            </div>
+                        ` : ''}
+                        ${invoice.terms ? `
+                            <div>
+                                <h4 style="margin-bottom: var(--space-sm);">Terms:</h4>
+                                <p style="color: var(--text-secondary);">${escapeHtml(invoice.terms)}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+
+                ${(invoice.payments && invoice.payments.length > 0) ? `
+                    <div class="mt-4">
+                        <h4 style="margin-bottom: var(--space-md);">Payment History:</h4>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Method</th>
+                                        <th>Reference</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${invoice.payments.map(pay => `
+                                        <tr>
+                                            <td>${formatDate(pay.payment_date)}</td>
+                                            <td><strong style="color: var(--success);">₹${pay.amount.toFixed(2)}</strong></td>
+                                            <td>${formatPaymentMethod(pay.payment_method)}</td>
+                                            <td>${escapeHtml(pay.reference_number || '-')}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            document.getElementById('invoiceModalBody').innerHTML = html;
+            document.getElementById('invoiceModal').classList.add('active');
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoiceModal').classList.remove('active');
+            currentInvoice = null;
+        }
+
+        async function downloadInvoicePDF(invoiceId) {
+            await viewInvoiceDetails(invoiceId);
+            downloadPDF();
+        }
+
+        function downloadPDF() {
+            if (!currentInvoice) {
+                showAlert('alertContainer', 'No invoice selected', 'error');
+                return;
+            }
+
+            try {
+                const pdf = generateInvoicePDF(currentInvoice);
+                pdf.save(`${currentInvoice.invoice_number}.pdf`);
+                showAlert('alertContainer', 'PDF downloaded successfully!', 'success');
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to generate PDF', 'error');
+                console.error('PDF generation error:', error);
+            }
+        }
+
+        function shareInvoiceWhatsApp(invoiceId) {
+            viewInvoiceDetails(invoiceId).then(() => {
+                shareWhatsApp();
+            });
+        }
+
+        function shareWhatsApp() {
+            if (!currentInvoice) {
+                showAlert('alertContainer', 'No invoice selected', 'error');
+                return;
+            }
+
+            const dueAmount = currentInvoice.total_amount - currentInvoice.amount_paid;
+            const message = `
+*Invoice ${currentInvoice.invoice_number}*
+
+*Client:* ${currentInvoice.client_name}
+*Date:* ${formatDate(currentInvoice.invoice_date)}
+*Total:* ₹${currentInvoice.total_amount.toFixed(2)}
+*Paid:* ₹${currentInvoice.amount_paid.toFixed(2)}
+*Due:* ₹${dueAmount.toFixed(2)}
+*Status:* ${currentInvoice.status.toUpperCase()}
+
+Please complete the payment at your earliest convenience.
+
+Thank you for your business!
+            `.trim();
+
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function downloadInvoicePDF(invoiceId) {
+            viewInvoiceDetails(invoiceId).then(() => {
+                downloadPDF();
+            });
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>

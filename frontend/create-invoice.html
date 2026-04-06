@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Invoice - Invoice System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">📄</div>
+                <span class="brand-name">Invoice System</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="invoices.html" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        <span>Invoices</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="create-invoice.html" class="nav-link active">
+                        <span class="nav-icon">➕</span>
+                        <span>Create Invoice</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="clients.html" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span>Clients</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="payments.html" class="nav-link">
+                        <span class="nav-icon">💳</span>
+                        <span>Payments</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; color: var(--danger);">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Create New Invoice</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <a href="invoices.html" class="btn btn-secondary">Cancel</a>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="card">
+                <form id="invoiceForm">
+                    <!-- Invoice Header -->
+                    <div class="form-row mb-4">
+                        <div class="form-group">
+                            <label class="form-label required" for="clientId">Select Client</label>
+                            <select id="clientId" class="form-select" required onchange="onClientChange()">
+                                <option value="">Choose a client...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="invoiceDate">Invoice Date</label>
+                            <input type="date" id="invoiceDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="dueDate">Due Date</label>
+                            <input type="date" id="dueDate" class="form-input">
+                        </div>
+                    </div>
+
+                    <!-- Client Details Display -->
+                    <div id="clientDetails" class="card" style="background: var(--bg-tertiary); margin-bottom: var(--space-lg); display: none;">
+                        <div class="card-body">
+                            <h4 style="margin-bottom: var(--space-md);">Client Details</h4>
+                            <div class="form-row">
+                                <div>
+                                    <strong>Bill To:</strong>
+                                    <p id="clientNameDisplay" style="margin: var(--space-xs) 0;"></p>
+                                    <p id="clientAddressDisplay" style="color: var(--text-muted);"></p>
+                                </div>
+                                <div>
+                                    <p><strong>GST:</strong> <span id="clientGstDisplay">-</span></p>
+                                    <p><strong>PAN:</strong> <span id="clientPanDisplay">-</span></p>
+                                    <p><strong>State:</strong> <span id="clientStateDisplay">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Line Items -->
+                    <div class="form-group">
+                        <div class="flex-between mb-2">
+                            <label class="form-label" style="margin: 0;">Line Items</label>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="addItem()">+ Add Item</button>
+                        </div>
+
+                        <div class="items-table">
+                            <table class="table" id="itemsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%;">Description</th>
+                                        <th style="width: 12%;">Quantity</th>
+                                        <th style="width: 15%;">Rate (₹)</th>
+                                        <th style="width: 13%;">GST (%)</th>
+                                        <th style="width: 15%;">Amount</th>
+                                        <th style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsBody">
+                                    <!-- Items will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="invoice-totals">
+                        <div class="total-row">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹0.00</span>
+                        </div>
+                        <div class="total-row" id="cgstRow" style="display: none;">
+                            <span>CGST:</span>
+                            <span id="cgst">₹0.00</span>
+                        </div>
+                        <div class="total-row" id="sgstRow" style="display: none;">
+                            <span>SGST:</span>
+                            <span id="sgst">₹0.00</span>
+                        </div>
+                        <div class="total-row" id="igstRow" style="display: none;">
+                            <span>IGST:</span>
+                            <span id="igst">₹0.00</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>Total:</span>
+                            <span id="total">₹0.00</span>
+                        </div>
+                        <p id="taxNote" class="text-muted" style="font-size: 0.8125rem; margin-top: var(--space-sm);"></p>
+                    </div>
+
+                    <!-- Notes and Terms -->
+                    <div class="form-row mt-4">
+                        <div class="form-group">
+                            <label class="form-label" for="notes">Notes</label>
+                            <textarea id="notes" class="form-textarea" placeholder="Thank you for your business!"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="terms">Terms & Conditions</label>
+                            <textarea id="terms" class="form-textarea" placeholder="Payment due within 30 days."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex-end gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                        <button type="submit" class="btn btn-primary">
+                            💾 Create Invoice
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let clients = [];
+        let items = [];
+        let businessStateCode = '27'; // Default Maharashtra
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadTheme();
+            loadClients();
+            loadUserProfile();
+
+            // Set default dates
+            document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
+
+            // Set default due date (30 days from now)
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            document.getElementById('dueDate').value = dueDate.toISOString().split('T')[0];
+
+            // Add first item
+            addItem();
+        });
+
+        async function loadClients() {
+            try {
+                const response = await api.getClients();
+                if (response.clients) {
+                    clients = response.clients;
+                    const select = document.getElementById('clientId');
+                    select.innerHTML = '<option value="">Choose a client...</option>' +
+                        clients.map(c => `<option value="${c.id}" data-state="${c.state_code}">${escapeHtml(c.name)}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Load clients error:', error);
+            }
+        }
+
+        async function loadUserProfile() {
+            try {
+                const response = await api.getProfile();
+                if (response.user && response.user.state_code) {
+                    businessStateCode = response.user.state_code;
+                }
+            } catch (error) {
+                console.error('Load profile error:', error);
+            }
+        }
+
+        function onClientChange() {
+            const select = document.getElementById('clientId');
+            const selectedOption = select.options[select.selectedIndex];
+            const clientId = select.value;
+
+            if (!clientId) {
+                document.getElementById('clientDetails').style.display = 'none';
+                return;
+            }
+
+            const client = clients.find(c => c.id == clientId);
+            if (client) {
+                document.getElementById('clientDetails').style.display = 'block';
+                document.getElementById('clientNameDisplay').textContent = client.name;
+                document.getElementById('clientAddressDisplay').textContent = client.address || 'No address provided';
+                document.getElementById('clientGstDisplay').textContent = client.gst_number || '-';
+                document.getElementById('clientPanDisplay').textContent = client.pan_number || '-';
+                document.getElementById('clientStateDisplay').textContent = `${client.state_name || 'Maharashtra'} (${client.state_code})`;
+
+                // Recalculate totals based on state
+                calculateTotals();
+            }
+        }
+
+        function addItem() {
+            const item = {
+                id: Date.now(),
+                description: '',
+                quantity: 1,
+                rate: 0,
+                gstPercentage: 18,
+            };
+            items.push(item);
+            renderItems();
+        }
+
+        function removeItem(id) {
+            if (items.length === 1) {
+                showAlert('alertContainer', 'At least one item is required', 'warning');
+                return;
+            }
+            items = items.filter(i => i.id !== id);
+            renderItems();
+        }
+
+        function updateItem(id, field, value) {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item[field] = field === 'description' ? value : parseFloat(value) || 0;
+                renderItems();
+            }
+        }
+
+        function renderItems() {
+            const tbody = document.getElementById('itemsBody');
+            tbody.innerHTML = items.map((item, index) => `
+                <tr>
+                    <td>
+                        <input type="text" value="${escapeHtml(item.description)}"
+                            onchange="updateItem(${item.id}, 'description', this.value)"
+                            placeholder="Item description">
+                    </td>
+                    <td>
+                        <input type="number" value="${item.quantity}" min="0" step="0.01"
+                            onchange="updateItem(${item.id}, 'quantity', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" value="${item.rate}" min="0" step="0.01"
+                            onchange="updateItem(${item.id}, 'rate', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" value="${item.gstPercentage}" min="0" max="100" step="0.01"
+                            onchange="updateItem(${item.id}, 'gstPercentage', this.value)">
+                    </td>
+                    <td><strong>₹${(item.quantity * item.rate).toFixed(2)}</strong></td>
+                    <td>
+                        <button type="button" class="remove-btn" onclick="removeItem(${item.id})">×</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const select = document.getElementById('clientId');
+            const clientStateCode = select.options[select.selectedIndex]?.dataset?.state || businessStateCode;
+            const isInterState = clientStateCode !== businessStateCode;
+
+            let subtotal = 0;
+            let totalGST = 0;
+
+            items.forEach(item => {
+                const amount = item.quantity * item.rate;
+                const gstAmount = (amount * item.gstPercentage) / 100;
+                subtotal += amount;
+                totalGST += gstAmount;
+            });
+
+            let cgst = 0, sgst = 0, igst = 0;
+
+            if (isInterState) {
+                igst = totalGST;
+                document.getElementById('cgstRow').style.display = 'none';
+                document.getElementById('sgstRow').style.display = 'none';
+                document.getElementById('igstRow').style.display = 'flex';
+                document.getElementById('taxNote').textContent = 'IGST applicable (Inter-state supply)';
+            } else {
+                cgst = totalGST / 2;
+                sgst = totalGST / 2;
+                document.getElementById('cgstRow').style.display = 'flex';
+                document.getElementById('sgstRow').style.display = 'flex';
+                document.getElementById('igstRow').style.display = 'none';
+                document.getElementById('taxNote').textContent = 'CGST + SGST applicable (Intra-state supply)';
+            }
+
+            const total = subtotal + totalGST;
+
+            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('cgst').textContent = `₹${cgst.toFixed(2)}`;
+            document.getElementById('sgst').textContent = `₹${sgst.toFixed(2)}`;
+            document.getElementById('igst').textContent = `₹${igst.toFixed(2)}`;
+            document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+        }
+
+        function clearForm() {
+            document.getElementById('invoiceForm').reset();
+            items = [];
+            addItem();
+            document.getElementById('clientDetails').style.display = 'none';
+            document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            document.getElementById('dueDate').value = dueDate.toISOString().split('T')[0];
+        }
+
+        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const clientId = document.getElementById('clientId').value;
+            if (!clientId) {
+                showAlert('alertContainer', 'Please select a client', 'error');
+                return;
+            }
+
+            // Validate items
+            for (const item of items) {
+                if (!item.description.trim()) {
+                    showAlert('alertContainer', 'Please fill item description', 'error');
+                    return;
+                }
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Creating...';
+
+            try {
+                const invoiceData = {
+                    client_id: parseInt(clientId),
+                    invoice_date: document.getElementById('invoiceDate').value,
+                    due_date: document.getElementById('dueDate').value || null,
+                    notes: document.getElementById('notes').value.trim(),
+                    terms: document.getElementById('terms').value.trim(),
+                    items: items.map(item => ({
+                        description: item.description,
+                        quantity: item.quantity,
+                        rate: item.rate,
+                        gstPercentage: item.gstPercentage,
+                    })),
+                };
+
+                const response = await api.createInvoice(invoiceData);
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                } else {
+                    showAlert('alertContainer', 'Invoice created successfully!', 'success');
+
+                    // Store invoice ID for PDF download
+                    localStorage.setItem('downloadInvoiceId', response.invoice.id);
+
+                    // Redirect to invoices page
+                    setTimeout(() => {
+                        window.location.href = 'invoices.html?download=' + response.invoice.id;
+                    }, 1000);
+                }
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to create invoice', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '💾 Create Invoice';
+            }
+        });
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Invoice System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">📄</div>
+                <span class="brand-name">Invoice System</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link active">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="invoices.html" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        <span>Invoices</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="create-invoice.html" class="nav-link">
+                        <span class="nav-icon">➕</span>
+                        <span>Create Invoice</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="clients.html" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span>Clients</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="payments.html" class="nav-link">
+                        <span class="nav-icon">💳</span>
+                        <span>Payments</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; color: var(--danger);">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <div class="user-menu">
+                        <div class="user-avatar" id="userAvatar"></div>
+                        <div class="user-info">
+                            <span class="user-name" id="userName">Loading...</span>
+                            <span class="user-email" id="userEmail"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">💰</div>
+                    <div class="stat-value" id="totalRevenue">₹0</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon warning">⏳</div>
+                    <div class="stat-value" id="pendingPayments">₹0</div>
+                    <div class="stat-label">Pending Payments</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon success">✅</div>
+                    <div class="stat-value" id="paidInvoices">0</div>
+                    <div class="stat-label">Paid Invoices</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon danger">📝</div>
+                    <div class="stat-value" id="unpaidInvoices">0</div>
+                    <div class="stat-label">Unpaid Invoices</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Quick Actions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="flex gap-2" style="flex-wrap: wrap;">
+                        <a href="create-invoice.html" class="btn btn-primary">
+                            ➕ New Invoice
+                        </a>
+                        <a href="clients.html" class="btn btn-secondary">
+                            👥 Add Client
+                        </a>
+                        <button onclick="recordPayment()" class="btn btn-success">
+                            💳 Record Payment
+                        </button>
+                        <button onclick="exportData()" class="btn btn-outline">
+                            📥 Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Invoices -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Invoices</h3>
+                    <a href="invoices.html" class="btn btn-sm btn-outline">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Client</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentInvoicesBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="loading">
+                                            <span class="spinner"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Record Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Record Payment</h3>
+                <button class="modal-close" onclick="closePaymentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentInvoice">Select Invoice</label>
+                        <select id="paymentInvoice" class="form-select" required>
+                            <option value="">Choose an invoice...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentAmount">Amount</label>
+                        <input type="number" id="paymentAmount" class="form-input" placeholder="₹0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentDate">Payment Date</label>
+                        <input type="date" id="paymentDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentMethod">Payment Method</label>
+                        <select id="paymentMethod" class="form-select" required>
+                            <option value="">Choose method...</option>
+                            <option value="upi">UPI</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="paymentReference">Reference Number</label>
+                        <input type="text" id="paymentReference" class="form-input" placeholder="Transaction ID, Cheque No., etc.">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="paymentNotes">Notes</label>
+                        <textarea id="paymentNotes" class="form-textarea" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitPayment()">Record Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let allInvoices = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            checkAuth();
+
+            // Load theme
+            loadTheme();
+
+            // Load user info
+            loadUserInfo();
+
+            // Load dashboard data
+            await loadDashboard();
+
+            // Load invoices for payment dropdown
+            await loadInvoicesForDropdown();
+        });
+
+        async function loadDashboard() {
+            try {
+                const response = await api.getDashboard();
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                    return;
+                }
+
+                const { stats, recentInvoices } = response;
+
+                // Update stats
+                document.getElementById('totalRevenue').textContent = formatCurrency(stats.totalRevenue);
+                document.getElementById('pendingPayments').textContent = formatCurrency(stats.pendingPayments);
+                document.getElementById('paidInvoices').textContent = stats.paidInvoices;
+                document.getElementById('unpaidInvoices').textContent = stats.unpaidInvoices;
+
+                // Update recent invoices table
+                const tbody = document.getElementById('recentInvoicesBody');
+
+                if (recentInvoices.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📋</div>
+                                    <p class="empty-title">No invoices yet</p>
+                                    <p class="empty-text">Create your first invoice to get started</p>
+                                    <a href="create-invoice.html" class="btn btn-primary btn-sm">Create Invoice</a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = recentInvoices.map(inv => `
+                    <tr>
+                        <td><strong>${escapeHtml(inv.invoice_number)}</strong></td>
+                        <td>${escapeHtml(inv.client_name)}</td>
+                        <td>${formatDate(inv.invoice_date)}</td>
+                        <td><strong>${formatCurrency(inv.total_amount)}</strong></td>
+                        <td>${getStatusBadge(inv.status)}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="action-btn view" onclick="viewInvoice(${inv.id})" title="View">👁️</button>
+                                <button class="action-btn edit" onclick="downloadInvoice(${inv.id})" title="Download">⬇️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+
+                allInvoices = recentInvoices;
+
+            } catch (error) {
+                console.error('Dashboard load error:', error);
+                showAlert('alertContainer', 'Failed to load dashboard data', 'error');
+            }
+        }
+
+        function loadUserInfo() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('userName').textContent = user.business_name || user.email;
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userAvatar').textContent = (user.business_name || user.email).charAt(0).toUpperCase();
+            }
+        }
+
+        async function loadInvoicesForDropdown() {
+            try {
+                const response = await api.getInvoices();
+                if (response.invoices) {
+                    allInvoices = response.invoices;
+                    const select = document.getElementById('paymentInvoice');
+                    const unpaidInvoices = response.invoices.filter(inv => inv.status !== 'paid');
+
+                    if (unpaidInvoices.length === 0) {
+                        select.innerHTML = '<option value="">No pending invoices</option>';
+                        return;
+                    }
+
+                    select.innerHTML = unpaidInvoices.map(inv => `
+                        <option value="${inv.id}">${inv.invoice_number} - ${inv.client_name} (${formatCurrency(inv.total_amount - inv.amount_paid)} due)</option>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Load invoices error:', error);
+            }
+        }
+
+        function recordPayment() {
+            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            document.getElementById('paymentForm').reset();
+        }
+
+        async function submitPayment() {
+            const invoiceId = document.getElementById('paymentInvoice').value;
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const paymentDate = document.getElementById('paymentDate').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const referenceNumber = document.getElementById('paymentReference').value;
+            const notes = document.getElementById('paymentNotes').value;
+
+            if (!invoiceId || !amount || !paymentDate || !paymentMethod) {
+                showAlert('alertContainer', 'Please fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await api.createPayment(invoiceId, {
+                    amount,
+                    payment_date: paymentDate,
+                    payment_method: paymentMethod,
+                    reference_number: referenceNumber,
+                    notes: notes
+                });
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                } else {
+                    showAlert('alertContainer', 'Payment recorded successfully!', 'success');
+                    closePaymentModal();
+                    await loadDashboard();
+                    await loadInvoicesForDropdown();
+                }
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to record payment', 'error');
+            }
+        }
+
+        async function exportData() {
+            try {
+                const response = await api.exportData();
+                if (response.data) {
+                    const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `invoice-export-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showAlert('alertContainer', 'Data exported successfully!', 'success');
+                }
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to export data', 'error');
+            }
+        }
+
+        function viewInvoice(id) {
+            // Store invoice ID and redirect to view page (you can create this)
+            localStorage.setItem('viewInvoiceId', id);
+            window.location.href = `invoices.html?view=${id}`;
+        }
+
+        function downloadInvoice(id) {
+            // For now, just show alert - PDF generation will be in invoice view
+            localStorage.setItem('downloadInvoiceId', id);
+            window.location.href = `invoices.html?download=${id}`;
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>

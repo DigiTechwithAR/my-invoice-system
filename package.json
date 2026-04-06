@@ -1,0 +1,23 @@
+{
+  "name": "invoice-system",
+  "version": "1.0.0",
+  "description": "Production-ready invoicing application for service-based businesses",
+  "scripts": {
+    "dev": "wrangler dev backend/worker.js",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute invoice-system-db --file=backend/db/schema.sql",
+    "db:seed": "wrangler d1 execute invoice-system-db --file=backend/db/seed.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
+  "keywords": [
+    "invoice",
+    "gst",
+    "cloudflare",
+    "workers",
+    "d1"
+  ],
+  "author": "",
+  "license": "MIT"
+}

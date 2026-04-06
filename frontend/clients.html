@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients - Invoice System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">📄</div>
+                <span class="brand-name">Invoice System</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="invoices.html" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        <span>Invoices</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="create-invoice.html" class="nav-link">
+                        <span class="nav-icon">➕</span>
+                        <span>Create Invoice</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="clients.html" class="nav-link active">
+                        <span class="nav-icon">👥</span>
+                        <span>Clients</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="payments.html" class="nav-link">
+                        <span class="nav-icon">💳</span>
+                        <span>Payments</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; color: var(--danger);">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Clients</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <button class="btn btn-primary" onclick="openClientModal()">
+                        ➕ Add Client
+                    </button>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Search Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        class="form-input"
+                        placeholder="🔍 Search clients by name, email, or phone..."
+                        oninput="filterClients()"
+                    >
+                </div>
+            </div>
+
+            <!-- Clients Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>State</th>
+                                    <th>GST Number</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientsBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="loading">
+                                            <span class="spinner"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Client Modal -->
+    <div class="modal-overlay" id="clientModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Add New Client</h3>
+                <button class="modal-close" onclick="closeClientModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm">
+                    <input type="hidden" id="clientId">
+
+                    <div class="form-group">
+                        <label class="form-label required" for="clientName">Client Name / Company</label>
+                        <input type="text" id="clientName" class="form-input" placeholder="Enter client name" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="clientEmail">Email Address</label>
+                            <input type="email" id="clientEmail" class="form-input" placeholder="client@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="clientPhone">Phone Number</label>
+                            <input type="tel" id="clientPhone" class="form-input" placeholder="+91 98765 43210">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="clientAddress">Address</label>
+                        <textarea id="clientAddress" class="form-textarea" placeholder="Enter full address"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="clientGst">GST Number</label>
+                            <input type="text" id="clientGst" class="form-input" placeholder="27AABCU1234A1Z5" maxlength="15">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="clientPan">PAN Number</label>
+                            <input type="text" id="clientPan" class="form-input" placeholder="AABCU1234A" maxlength="10">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="clientStateCode">State Code</label>
+                            <select id="clientStateCode" class="form-select" required>
+                                <option value="27">Maharashtra (27)</option>
+                                <option value="29">Karnataka (29)</option>
+                                <option value="36">Telangana (36)</option>
+                                <option value="33">Tamil Nadu (33)</option>
+                                <option value="24">Gujarat (24)</option>
+                                <option value="07">Delhi (07)</option>
+                                <option value="09">Uttar Pradesh (09)</option>
+                                <option value="19">West Bengal (19)</option>
+                                <option value="20">Bihar (20)</option>
+                                <option value="21">Odisha (21)</option>
+                                <option value="23">Madhya Pradesh (23)</option>
+                                <option value="08">Rajasthan (08)</option>
+                                <option value="06">Haryana (06)</option>
+                                <option value="03">Punjab (03)</option>
+                                <option value="05">Uttarakhand (05)</option>
+                                <option value="10">Jharkhand (10)</option>
+                                <option value="11">Jammu & Kashmir (11)</option>
+                                <option value="12">Himachal Pradesh (12)</option>
+                                <option value="13">Puducherry (13)</option>
+                                <option value="14">Chandigarh (14)</option>
+                                <option value="15">Assam (15)</option>
+                                <option value="16">Arunachal Pradesh (16)</option>
+                                <option value="17">Manipur (17)</option>
+                                <option value="18">Meghalaya (18)</option>
+                                <option value="22">Chhattisgarh (22)</option>
+                                <option value="25">Goa (25)</option>
+                                <option value="26">Dadra & Nagar Haveli (26)</option>
+                                <option value="28">Andhra Pradesh (28)</option>
+                                <option value="30">Kerala (30)</option>
+                                <option value="31">Rajasthan (31)</option>
+                                <option value="32">Lakshadweep (32)</option>
+                                <option value="34">Andaman & Nicobar (34)</option>
+                                <option value="35">Ladakh (35)</option>
+                                <option value="37">Tripura (37)</option>
+                                <option value="38">Mizoram (38)</option>
+                                <option value="39">Nagaland (39)</option>
+                                <option value="40">Sikkim (40)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="clientStateName">State Name</label>
+                            <input type="text" id="clientStateName" class="form-input" placeholder="State name" readonly>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveClient()">Save Client</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let allClients = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadTheme();
+            loadClients();
+            setupStateCodeListener();
+        });
+
+        // State code to name mapping
+        const stateNames = {
+            '27': 'Maharashtra', '29': 'Karnataka', '36': 'Telangana', '33': 'Tamil Nadu',
+            '24': 'Gujarat', '07': 'Delhi', '09': 'Uttar Pradesh', '19': 'West Bengal',
+            '20': 'Bihar', '21': 'Odisha', '23': 'Madhya Pradesh', '08': 'Rajasthan',
+            '06': 'Haryana', '03': 'Punjab', '05': 'Uttarakhand', '10': 'Jharkhand',
+            '11': 'Jammu & Kashmir', '12': 'Himachal Pradesh', '13': 'Puducherry',
+            '14': 'Chandigarh', '15': 'Assam', '16': 'Arunachal Pradesh', '17': 'Manipur',
+            '18': 'Meghalaya', '22': 'Chhattisgarh', '25': 'Goa', '26': 'Dadra & Nagar Haveli',
+            '28': 'Andhra Pradesh', '30': 'Kerala', '31': 'Rajasthan', '32': 'Lakshadweep',
+            '34': 'Andaman & Nicobar', '35': 'Ladakh', '37': 'Tripura', '38': 'Mizoram',
+            '39': 'Nagaland', '40': 'Sikkim'
+        };
+
+        function setupStateCodeListener() {
+            document.getElementById('clientStateCode').addEventListener('change', (e) => {
+                document.getElementById('clientStateName').value = stateNames[e.target.value] || '';
+            });
+        }
+
+        async function loadClients() {
+            try {
+                const response = await api.getClients();
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                    return;
+                }
+
+                allClients = response.clients || [];
+                renderClients(allClients);
+
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to load clients', 'error');
+            }
+        }
+
+        function renderClients(clients) {
+            const tbody = document.getElementById('clientsBody');
+
+            if (clients.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-icon">👥</div>
+                                <p class="empty-title">No clients found</p>
+                                <p class="empty-text">Add your first client to get started</p>
+                                <button class="btn btn-primary btn-sm" onclick="openClientModal()">Add Client</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = clients.map(client => `
+                <tr>
+                    <td><strong>${escapeHtml(client.name)}</strong></td>
+                    <td>${escapeHtml(client.email || '-')}</td>
+                    <td>${escapeHtml(client.phone || '-')}</td>
+                    <td>${escapeHtml(client.state_name || 'Maharashtra')}</td>
+                    <td>${escapeHtml(client.gst_number || '-')}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="action-btn edit" onclick="editClient(${client.id})" title="Edit">✏️</button>
+                            <button class="action-btn delete" onclick="deleteClient(${client.id})" title="Delete">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterClients() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            if (!searchTerm) {
+                renderClients(allClients);
+                return;
+            }
+
+            const filtered = allClients.filter(client =>
+                client.name.toLowerCase().includes(searchTerm) ||
+                (client.email && client.email.toLowerCase().includes(searchTerm)) ||
+                (client.phone && client.phone.includes(searchTerm))
+            );
+
+            renderClients(filtered);
+        }
+
+        function openClientModal(clientId = null) {
+            document.getElementById('clientModal').classList.add('active');
+            document.getElementById('clientForm').reset();
+
+            if (clientId) {
+                document.getElementById('modalTitle').textContent = 'Edit Client';
+                const client = allClients.find(c => c.id === clientId);
+                if (client) {
+                    document.getElementById('clientId').value = client.id;
+                    document.getElementById('clientName').value = client.name;
+                    document.getElementById('clientEmail').value = client.email || '';
+                    document.getElementById('clientPhone').value = client.phone || '';
+                    document.getElementById('clientAddress').value = client.address || '';
+                    document.getElementById('clientGst').value = client.gst_number || '';
+                    document.getElementById('clientPan').value = client.pan_number || '';
+                    document.getElementById('clientStateCode').value = client.state_code || '27';
+                    document.getElementById('clientStateName').value = client.state_name || 'Maharashtra';
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add New Client';
+                document.getElementById('clientId').value = '';
+                document.getElementById('clientStateCode').value = '27';
+                document.getElementById('clientStateName').value = 'Maharashtra';
+            }
+        }
+
+        function closeClientModal() {
+            document.getElementById('clientModal').classList.remove('active');
+            document.getElementById('clientForm').reset();
+        }
+
+        async function saveClient() {
+            const clientId = document.getElementById('clientId').value;
+            const clientData = {
+                name: document.getElementById('clientName').value.trim(),
+                email: document.getElementById('clientEmail').value.trim(),
+                phone: document.getElementById('clientPhone').value.trim(),
+                address: document.getElementById('clientAddress').value.trim(),
+                gst_number: document.getElementById('clientGst').value.trim().toUpperCase(),
+                pan_number: document.getElementById('clientPan').value.trim().toUpperCase(),
+                state_code: document.getElementById('clientStateCode').value,
+                state_name: document.getElementById('clientStateName').value,
+            };
+
+            if (!clientData.name) {
+                showAlert('alertContainer', 'Client name is required', 'error');
+                return;
+            }
+
+            try {
+                let response;
+                if (clientId) {
+                    response = await api.updateClient(clientId, clientData);
+                } else {
+                    response = await api.createClient(clientData);
+                }
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                } else {
+                    showAlert('alertContainer', clientId ? 'Client updated successfully!' : 'Client created successfully!', 'success');
+                    closeClientModal();
+                    await loadClients();
+                }
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to save client', 'error');
+            }
+        }
+
+        function editClient(id) {
+            openClientModal(id);
+        }
+
+        async function deleteClient(id) {
+            if (!confirm('Are you sure you want to delete this client? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await api.deleteClient(id);
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                } else {
+                    showAlert('alertContainer', 'Client deleted successfully!', 'success');
+                    await loadClients();
+                }
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to delete client', 'error');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>

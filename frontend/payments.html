@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments - Invoice System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">📄</div>
+                <span class="brand-name">Invoice System</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="invoices.html" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        <span>Invoices</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="create-invoice.html" class="nav-link">
+                        <span class="nav-icon">➕</span>
+                        <span>Create Invoice</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="clients.html" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span>Clients</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="payments.html" class="nav-link active">
+                        <span class="nav-icon">💳</span>
+                        <span>Payments</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; color: var(--danger);">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Payments</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <button class="btn btn-success" onclick="openPaymentModal()">➕ Record Payment</button>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Payment Stats -->
+            <div class="stats-grid mb-4">
+                <div class="stat-card success">
+                    <div class="stat-icon success">💰</div>
+                    <div class="stat-value" id="totalReceived">₹0</div>
+                    <div class="stat-label">Total Received</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon warning">⏳</div>
+                    <div class="stat-value" id="totalPending">₹0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon primary">💳</div>
+                    <div class="stat-value" id="totalPayments">0</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="flex" style="gap: var(--space-md); flex-wrap: wrap;">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            class="form-input"
+                            placeholder="🔍 Search payments..."
+                            style="flex: 1; min-width: 200px;"
+                            oninput="filterPayments()"
+                        >
+                        <select id="methodFilter" class="form-select" style="width: auto;" onchange="filterPayments()">
+                            <option value="all">All Methods</option>
+                            <option value="upi">UPI</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input
+                            type="date"
+                            id="dateFilter"
+                            class="form-input"
+                            style="width: auto;"
+                            onchange="filterPayments()"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payments Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Invoice #</th>
+                                    <th>Client</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Reference</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <div class="loading">
+                                            <span class="spinner"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Record Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Record Payment</h3>
+                <button class="modal-close" onclick="closePaymentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentInvoice">Select Invoice</label>
+                        <select id="paymentInvoice" class="form-select" required onchange="updateDueAmount()">
+                            <option value="">Choose an invoice...</option>
+                        </select>
+                        <p id="dueAmountDisplay" class="text-muted" style="font-size: 0.875rem; margin-top: var(--space-sm);"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentAmount">Amount</label>
+                        <input type="number" id="paymentAmount" class="form-input" placeholder="₹0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentDate">Payment Date</label>
+                        <input type="date" id="paymentDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="paymentMethod">Payment Method</label>
+                        <select id="paymentMethod" class="form-select" required>
+                            <option value="">Choose method...</option>
+                            <option value="upi">UPI</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="paymentReference">Reference Number</label>
+                        <input type="text" id="paymentReference" class="form-input" placeholder="Transaction ID, Cheque No., etc.">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="paymentNotes">Notes</label>
+                        <textarea id="paymentNotes" class="form-textarea" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitPayment()">Record Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let allPayments = [];
+        let allInvoices = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadTheme();
+            loadPayments();
+            loadInvoicesForDropdown();
+        });
+
+        async function loadPayments() {
+            try {
+                // Get all invoices to access payments
+                const response = await api.getInvoices();
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                    return;
+                }
+
+                allInvoices = response.invoices || [];
+
+                // Extract all payments from invoices
+                allPayments = [];
+                let totalReceived = 0;
+
+                response.invoices.forEach(inv => {
+                    if (inv.payments && inv.payments.length > 0) {
+                        inv.payments.forEach(payment => {
+                            allPayments.push({
+                                ...payment,
+                                invoice_number: inv.invoice_number,
+                                client_name: inv.client_name,
+                            });
+                            totalReceived += payment.amount;
+                        });
+                    }
+                });
+
+                // Sort by date descending
+                allPayments.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date));
+
+                renderPayments(allPayments);
+                updateStats(totalReceived);
+
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to load payments', 'error');
+            }
+        }
+
+        function renderPayments(payments) {
+            const tbody = document.getElementById('paymentsBody');
+
+            if (payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">💳</div>
+                                <p class="empty-title">No payments recorded</p>
+                                <p class="empty-text">Record your first payment to get started</p>
+                                <button class="btn btn-success btn-sm" onclick="openPaymentModal()">Record Payment</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = payments.map(payment => `
+                <tr>
+                    <td>${formatDate(payment.payment_date)}</td>
+                    <td><strong>${escapeHtml(payment.invoice_number)}</strong></td>
+                    <td>${escapeHtml(payment.client_name)}</td>
+                    <td><strong style="color: var(--success);">₹${payment.amount.toFixed(2)}</strong></td>
+                    <td>${formatPaymentMethod(payment.payment_method)}</td>
+                    <td>${escapeHtml(payment.reference_number || '-')}</td>
+                    <td>${escapeHtml(payment.notes || '-')}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats(totalReceived) {
+            const totalPending = allInvoices.reduce((sum, inv) => {
+                return sum + (inv.total_amount - inv.amount_paid);
+            }, 0);
+
+            document.getElementById('totalReceived').textContent = formatCurrency(totalReceived);
+            document.getElementById('totalPending').textContent = formatCurrency(totalPending);
+            document.getElementById('totalPayments').textContent = allPayments.length;
+        }
+
+        function filterPayments() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const methodFilter = document.getElementById('methodFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+
+            let filtered = allPayments;
+
+            // Filter by search
+            if (searchTerm) {
+                filtered = filtered.filter(p =>
+                    p.invoice_number.toLowerCase().includes(searchTerm) ||
+                    p.client_name.toLowerCase().includes(searchTerm) ||
+                    (p.reference_number && p.reference_number.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            // Filter by method
+            if (methodFilter !== 'all') {
+                filtered = filtered.filter(p => p.payment_method === methodFilter);
+            }
+
+            // Filter by date
+            if (dateFilter) {
+                filtered = filtered.filter(p => p.payment_date === dateFilter);
+            }
+
+            renderPayments(filtered);
+        }
+
+        async function loadInvoicesForDropdown() {
+            const select = document.getElementById('paymentInvoice');
+            const unpaidInvoices = allInvoices.filter(inv => inv.status !== 'paid');
+
+            if (unpaidInvoices.length === 0) {
+                select.innerHTML = '<option value="">No pending invoices</option>';
+                return;
+            }
+
+            select.innerHTML = '<option value="">Choose an invoice...</option>' +
+                unpaidInvoices.map(inv => `
+                    <option value="${inv.id}" data-due="${(inv.total_amount - inv.amount_paid).toFixed(2)}">
+                        ${inv.invoice_number} - ${inv.client_name} (Due: ₹${(inv.total_amount - inv.amount_paid).toFixed(2)})
+                    </option>
+                `).join('');
+        }
+
+        function updateDueAmount() {
+            const select = document.getElementById('paymentInvoice');
+            const selectedOption = select.options[select.selectedIndex];
+            const dueAmount = selectedOption.dataset?.due;
+
+            if (dueAmount) {
+                document.getElementById('dueAmountDisplay').textContent = `Outstanding amount: ₹${dueAmount}`;
+                document.getElementById('paymentAmount').max = dueAmount;
+            } else {
+                document.getElementById('dueAmountDisplay').textContent = '';
+            }
+        }
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+            loadInvoicesForDropdown();
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            document.getElementById('paymentForm').reset();
+        }
+
+        async function submitPayment() {
+            const invoiceId = document.getElementById('paymentInvoice').value;
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const paymentDate = document.getElementById('paymentDate').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const referenceNumber = document.getElementById('paymentReference').value;
+            const notes = document.getElementById('paymentNotes').value;
+
+            if (!invoiceId || !amount || !paymentDate || !paymentMethod) {
+                showAlert('alertContainer', 'Please fill all required fields', 'error');
+                return;
+            }
+
+            if (amount <= 0) {
+                showAlert('alertContainer', 'Amount must be greater than 0', 'error');
+                return;
+            }
+
+            try {
+                const response = await api.createPayment(invoiceId, {
+                    amount,
+                    payment_date: paymentDate,
+                    payment_method: paymentMethod,
+                    reference_number: referenceNumber,
+                    notes: notes
+                });
+
+                if (response.error) {
+                    showAlert('alertContainer', response.error, 'error');
+                } else {
+                    showAlert('alertContainer', 'Payment recorded successfully!', 'success');
+                    closePaymentModal();
+                    await loadPayments();
+                }
+            } catch (error) {
+                showAlert('alertContainer', 'Failed to record payment', 'error');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
