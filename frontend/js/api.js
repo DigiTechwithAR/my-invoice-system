@@ -4,7 +4,7 @@
  */
 
 // API Base URL - Update this to your deployed Worker URL
-const API_BASE_URL = 'http://localhost:8787/api';
+const API_BASE_URL = 'https://invoice-system-api.digitechwithar.workers.dev';
 
 // Alternative: Use environment variable if available
 if (typeof window !== 'undefined' && window.API_URL) {
