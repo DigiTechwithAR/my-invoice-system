@@ -1,6 +1,6 @@
 /**
  * API Client for Invoice System
- * Handles all communication wissth the Cloudflare Worker backend
+ * Handles all communication wissth the Cloudflare Worker hhhbackend
  */
 
 // API Base URL - Update this to your deployed Worker URL (include /api prefix)
