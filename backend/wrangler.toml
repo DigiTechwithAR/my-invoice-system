@@ -1,0 +1,18 @@
+name = "invoice-system-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "invoice-system-db"
+database_id = "fe365049-9cc8-4f97-85a0-815cf1d541d5"
+
+# Environment Variables
+[vars]
+FRONTEND_URL = "https://my-invoice-system.pages.dev"
+JWT_SECRET = "change-this-to-a-secure-random-string"
+
+# Development settings
+[dev]
+port = 8787
