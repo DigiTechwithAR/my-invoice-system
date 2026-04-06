@@ -3,13 +3,10 @@
  * Handles all communication with the Cloudflare Worker backend
  */
 
-// API Base URL - Update this to your deployed Worker URL
-const API_BASE_URL = 'https://invoice-system-api.digitechwithar.workers.dev';
-
-// Alternative: Use environment variable if available
-if (typeof window !== 'undefined' && window.API_URL) {
-    window.API_BASE_URL = window.API_URL + '/api';
-}
+// API Base URL - Update this to your deployed Worker URL (include /api prefix)
+const API_BASE_URL = (typeof window !== 'undefined' && window.API_URL)
+    ? `${window.API_URL}/api`
+    : 'https://invoice-system-api.digitechwithar.workers.dev/api';
 
 /**
  * Make an authenticated API request
